@@ -1,19 +1,36 @@
-from tetromino import Tetromino
-from time import sleep
 import os
 import sys
-from random import randrange
-from collections import namedtuple
-
 
 import numpy as np
 
+from collections import namedtuple
+from itertools import cycle
+from time import sleep
+from random import randrange
+
+from tetromino import Tetromino
+
 ActionReport = namedtuple("ActionReport", "state done score score_from_action did_perform_move")
 
+
 class Tetris(object):
-    def __init__(self, number_of_rows=16, number_of_cols=10):
+
+    def __init__(self, number_of_rows=20, number_of_cols=10, steps_between_drop=20):
+        # game options
         self.number_of_rows = number_of_rows
         self.number_of_cols = number_of_cols
+        self.steps_between_drop = steps_between_drop
+
+        # game specific
+        self.board = None
+        self.piece = None
+        self.lines_scored = None
+        self.total_lines = None
+        self.moves = None
+        self.is_running = False
+        self.steps_til_drop_gen = None
+        self.steps_til_drop = None
+
         self.start()
 
     def start(self):
@@ -23,6 +40,8 @@ class Tetris(object):
         self.total_lines = 0
         self.moves = 0
         self.is_running = True
+        self.steps_til_drop_gen = cycle(reversed(range(self.steps_between_drop)))
+        self.steps_til_drop = next(self.steps_til_drop_gen)
 
     def empty_board(self):
         return list(np.zeros([self.number_of_rows, self.number_of_cols], dtype = np.int))
@@ -185,13 +204,22 @@ class Tetris(object):
                             self.moves += 1
                             return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=0, did_perform_move=True)
 
-
         self.piece.x, self.piece.y = x, y
 
         self.moves += 1
         return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=0, did_perform_move=True)
 
-
+    def step_forward(self, next_move):
+        ''' Keep track of number of moves to drop'''
+        self.steps_til_drop = next(self.steps_til_drop_gen)
+        report = self.move_piece(next_move)
+        if report.done:
+            return report
+        elif self.steps_til_drop == 0:  # automatic drop
+            new_report = self.move_piece('down')
+            if new_report.done:
+                return new_report
+        return report
 
 
 
