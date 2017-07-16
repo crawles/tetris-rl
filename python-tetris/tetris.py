@@ -47,6 +47,20 @@ class Tetris(object):
         return list(np.zeros([self.number_of_rows, self.number_of_cols], dtype = np.int))
 
     def combine_game_state(self):
+        # freeze piece on board
+        piece = np.array(self.piece.rotations[self.piece.current]).astype(np.bool)
+        p_y, p_x = self.piece.y, self.piece.x
+        p_height, p_width = piece.shape
+        p_start_y, p_end_y = p_y, p_y + p_height
+        p_start_x, p_end_x = p_x, p_x + p_width
+
+        combined_state = np.copy(self.board).astype(np.bool)
+        combined_state[p_start_y: p_end_y, p_start_x: p_end_x] += piece
+        return combined_state.astype(np.int)
+
+
+
+
         piece_indices = []
         for row_i, row in enumerate(self.piece.rotations[self.piece.current]):
             for col_i, col in enumerate(row):
@@ -85,6 +99,7 @@ class Tetris(object):
         return output
 
     def freeze_current_piece(self):
+        """If block has reached end point"""
         self.board = np.array(self.board)
 
         # freeze piece on board
@@ -109,7 +124,6 @@ class Tetris(object):
         self.piece = self.random_piece()
 
         return num_rows_cleared
-
 
     def random_piece(self):
         return Tetromino.random(
