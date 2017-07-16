@@ -26,7 +26,7 @@ class Tetris(object):
         self.is_running = True
 
     def empty_board(self):
-        return list(np.zeros([self.number_of_rows, self.number_of_cols]))
+        return list(np.zeros([self.number_of_rows, self.number_of_cols], dtype = np.int))
 
     def combine_game_state(self):
         piece_indices = []
@@ -76,7 +76,7 @@ class Tetris(object):
         for row_i, row in enumerate(self.board):
             if all(col != 0 for col in row):
                 lines_cleared += 1
-                self.board.pop()
+                self.board.pop(row_i)
                 self.board.insert(0, [0 for _ in range(10)])
 
         if lines_cleared:
@@ -187,20 +187,7 @@ class Tetris(object):
         self.moves += 1
         return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=0, did_perform_move=True)
 
-# TODO: this was to quickly, was impossible to play
-steps_til_drop_gen = cycle(reversed(range(4)))
-def step_forward(game, next_move):
-    ''' keep track of number of moves to drop'''
-    steps_till_drop = next(steps_til_drop_gen)
-    report = game.move_piece(next_move)
-    if report.done:
-        return report
-    elif steps_till_drop == 0: #automatic drop
-        new_report = game.move_piece('down')
-        if new_report.done:
-            return new_report
 
-    return report
 
 
 
