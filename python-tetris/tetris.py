@@ -72,6 +72,13 @@ class Tetris(object):
                 if col == 1:
                     self.board[row_i + self.piece.y][col_i + self.piece.x] = 1
 
+        self.board = np.array(self.board)
+        row_is_cleared = self.board.sum(axis=1) == self.number_of_cols
+        num_rows_cleared = np.sum(row_is_cleared)
+        new_board = np.zeros_like(self.board)
+        new_board[num_rows_cleared:, :] = self.board[~row_is_cleared]
+        self.board = list(self.board)
+
         lines_cleared = 0
         for row_i, row in enumerate(self.board):
             if all(col != 0 for col in row):
