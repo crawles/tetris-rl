@@ -5,6 +5,8 @@ import click
 
 import tetris
 
+from itertools import cycle
+
 # TODO: this was to quickly, was impossible to play
 steps_til_drop_gen = cycle(reversed(range(4)))
 def step_forward(game, next_move):

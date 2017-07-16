@@ -5,7 +5,6 @@ import sys
 from random import randrange
 from collections import namedtuple
 
-from itertools import cycle
 
 import numpy as np
 
@@ -55,7 +54,7 @@ class Tetris(object):
             output += "\n|"
             for col in row:
                 if col:
-                    output += 'o'
+                    output += '\u25A7'
                 else: output += " "
                 output += " "
             output += "|"
@@ -67,32 +66,30 @@ class Tetris(object):
         return output
 
     def freeze_current_piece(self):
-        for row_i, row in enumerate(self.piece.rotations[self.piece.current]):
-            for col_i, col in enumerate(row):
-                if col == 1:
-                    self.board[row_i + self.piece.y][col_i + self.piece.x] = 1
-
         self.board = np.array(self.board)
+
+        # freeze piece on board
+        piece = np.array(self.piece.rotations[self.piece.current])
+        p_y, p_x = self.piece.y, self.piece.x
+        p_height, p_width = piece.shape
+        p_start_y, p_end_y = p_y, p_y + p_height
+        p_start_x, p_end_x = p_x, p_x + p_width
+        self.board[p_start_y:p_end_y, p_start_x:p_end_x] += piece
+
+        # clear lines if needed
         row_is_cleared = self.board.sum(axis=1) == self.number_of_cols
         num_rows_cleared = np.sum(row_is_cleared)
         new_board = np.zeros_like(self.board)
         new_board[num_rows_cleared:, :] = self.board[~row_is_cleared]
-        self.board = list(self.board)
+        self.board = new_board
 
-        lines_cleared = 0
-        for row_i, row in enumerate(self.board):
-            if all(col != 0 for col in row):
-                lines_cleared += 1
-                self.board.pop(row_i)
-                self.board.insert(0, [0 for _ in range(10)])
-
-        if lines_cleared:
-            self.total_lines += lines_cleared
-            self.lines_scored.append(lines_cleared)
+        if num_rows_cleared > 0:
+            self.total_lines += num_rows_cleared
+            self.lines_scored.append(num_rows_cleared)
 
         self.piece = self.random_piece()
 
-        return lines_cleared
+        return num_rows_cleared
 
 
     def random_piece(self):
