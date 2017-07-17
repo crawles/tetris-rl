@@ -1,5 +1,7 @@
 import os
+import random
 import sys
+import time
 
 import numpy as np
 
@@ -58,27 +60,6 @@ class Tetris(object):
         combined_state[p_start_y: p_end_y, p_start_x: p_end_x] += piece
         return combined_state.astype(np.int)
 
-
-
-
-        piece_indices = []
-        for row_i, row in enumerate(self.piece.rotations[self.piece.current]):
-            for col_i, col in enumerate(row):
-                if col == 1:
-                    piece_indices.append((col_i + self.piece.x, row_i + self.piece.y))
-
-        combined_state=[]
-        for row_i, row in enumerate(self.board):
-            combined_row = []
-            for col_i, col in enumerate(row):
-                if (col_i, row_i) in piece_indices:
-                    combined_row.append(1)
-                else:
-                    combined_row.append(col)
-
-            combined_state.append(combined_row)
-
-        return combined_state
 
     def print_board(self):
         output = ""
@@ -148,16 +129,17 @@ class Tetris(object):
                     if col_i + x >= len(self.board[0]):
                         return self.rotate_piece(kick_offset=kick_offset - 1)
 
-
-        for row_i, row in enumerate(self.piece.rotations[new_current]):
-            for col_i, col in enumerate(row):
-                if col == 1:
-
-                    if row_i >= len(self.board) - 1:
-                        return False
-
-                    if self.board[row_i + y][col_i + x] == 1:
-                        return False
+        piece = np.array(self.piece.rotations[self.piece.current])
+        board_array = np.array(self.board)
+        p_y, p_x = self.piece.y, self.piece.x
+        p_height, p_width = piece.shape
+        p_start_y, p_end_y = p_y, p_y + p_height
+        p_start_x, p_end_x = p_x, p_x + p_width
+        if (p_end_y - p_start_y) != p_height:  # piece is off bottom edge of board
+            return False
+        board_subset = board_array[p_start_y: p_end_y, p_start_x: p_end_x]
+        if np.max(board_subset + piece) > 1:  # if piece space is occupied
+            return False
 
         self.piece.x, self.piece.y = x, y
         self.piece.current = new_current
@@ -242,24 +224,24 @@ if __name__ == "__main__":
     game = Tetris()
 
     moves = [
-            'left', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'right', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'right', 'right', 'right', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'right', 'right', 'right', 'right', 'right', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right',
+            'left', 'down','down', 'right', 'right', 'right', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'right', 'right', 'right', 'right', 'right', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right',
     ]
     for _ in range(50000):
-        for move in moves:
-            print(game.print_board())
-            print(str.format("\n\n\nlines: {0}", game.total_lines))
-            sleep(0.05)
+        move = random.choice(['up', 'down', 'left', 'right'])
+        print(game.print_board())
+        print(str.format("\n\n\nlines: {0}", game.total_lines))
+        sleep(0.05)
 
-            next_move = move
-            if next_move:
-                report = game.move_piece(next_move)
-                if report.done:
-                    game.start()
-
-            report = game.move_piece('down')
+        next_move = move
+        if next_move:
+            report = game.move_piece(next_move)
             if report.done:
                 game.start()
 
-            os.system('clear')
+        report = game.move_piece('down')
+        if report.done:
+            game.start()
+
+        os.system('clear')
     sys.exit(0)
 

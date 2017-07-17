@@ -28,4 +28,3 @@ def play_game(game = None):
         if report.done:
             game.start()
         os.system('clear')
-
