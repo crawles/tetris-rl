@@ -1,6 +1,6 @@
 import numpy as array
 
-import tetris
+import python_tetris
 import tetromino
 
 
@@ -35,7 +35,7 @@ moves = 185
 
 piece = tetromino.Tetromino(rotations, current, x, y, shape)
 
-game2 = tetris.Tetris()
+game2 = python_tetris.Tetris()
 game2.board = board
 game2.lines_scored = lines_scored
 game2.total_lines = total_lines

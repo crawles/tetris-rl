@@ -3,14 +3,14 @@ import sys
 
 import click
 
-import tetris
+import python_tetris
 
 
-
-
-def play_game(game = None):
-    if game is None:
-        game = tetris.Tetris()
+def play_game(**kwargs):
+    if 'game' not in kwargs:
+        game = python_tetris.Tetris(**kwargs)
+    else:
+        game = kwargs['game']
     moves = {'\x1b[A': 'up', '\x1b[B': 'down', '\x1b[D': 'left', '\x1b[C': 'right'}
     for _ in range(50000):
         print(game.print_board())

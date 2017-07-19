@@ -10,7 +10,8 @@ from itertools import cycle
 from time import sleep
 from random import randrange
 
-from tetromino import Tetromino
+from . import tetromino
+from .tetromino import Tetromino
 
 ActionReport = namedtuple("ActionReport", "state done score score_from_action did_perform_move")
 
