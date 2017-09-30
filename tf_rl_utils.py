@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
-import gym
+
 
 def discount_rewards(r, gamma = 0.99):
     """ take 1D float array of rewards and compute discounted reward """
@@ -12,11 +12,13 @@ def discount_rewards(r, gamma = 0.99):
         discounted_r[t] = running_add
     return discounted_r
 
+
 def prepro(I):
   """ prepro 20x10 uint8 frame into 200 (20x10) 1D float vector """
   return I.astype(np.float).ravel()
 
-class agent():
+
+class Agent():
     def __init__(self, lr, s_size, a_size, h_size):
         # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
         self.state_in = tf.placeholder(shape=[None, s_size], dtype=tf.float32)
