@@ -108,6 +108,7 @@ class Tetris(object):
         return num_rows_cleared
 
     def random_piece(self):
+        return Tetromino.Block(y=0,x=0)
         return Tetromino.random(
                 y=0,
                 x=randrange(0, self.number_of_cols - 2)
