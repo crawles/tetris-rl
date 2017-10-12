@@ -10,7 +10,7 @@ class PyTetrisEnv():
     def __init__(self, reward_blocked_cells = False):
         self.game = None
 
-    def _process_reward(self, report, reward_factor=1):
+    def _process_reward(self, report, reward_factor=10):
         """Convert o to nparray, reward to float"""
         o, d, cum_score, reward = report.state,\
                                   report.done,\
@@ -31,7 +31,9 @@ class PyTetrisEnv():
         if d:
             reward = -1
 
-        #DUMB reward
-        reward = int(action in ['left', 'right'])
+#        #DUMB reward
+#        reward = int(action in ['left', 'right'])
+#        if not reward:
+#            reward = -1
 
         return o, reward, d, None
