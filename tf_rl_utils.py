@@ -4,10 +4,11 @@ import numpy as np
 
 
 def discount_rewards(r, gamma = 0.99):
-    """ take 1D float array of rewards and compute discounted reward """
-    discounted_r = np.zeros_like(r)
+    """ Source: Karpathy
+    Take 1D float array of rewards and compute discounted reward """
+    discounted_r = np.zeros_like(r, dtype=np.float)
     running_add = 0
-    for t in reversed(range(0, r.size)):
+    for t in reversed(xrange(0, r.size)):
         running_add = running_add * gamma + r[t]
         discounted_r[t] = running_add
     return discounted_r
