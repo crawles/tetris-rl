@@ -62,10 +62,10 @@ class Tetris(object):
         return combined_state.astype(np.int)
 
 
-    def print_board(self):
+    def pretty_print_board(self, board_object):
         output = u""
 
-        for row in self.combine_game_state():
+        for row in board_object:
             output += u"\n|"
             for col in row:
                 if col:
@@ -80,6 +80,10 @@ class Tetris(object):
             output += u"_"
 
         return output
+
+
+    def print_board(self):
+        return self.pretty_print_board(self.combine_game_state())
 
     def freeze_current_piece(self):
         """If block has reached end point"""
