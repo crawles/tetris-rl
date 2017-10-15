@@ -63,20 +63,21 @@ class Tetris(object):
 
 
     def print_board(self):
-        output = ""
+        output = u""
 
         for row in self.combine_game_state():
-            output += "\n|"
+            output += u"\n|"
             for col in row:
                 if col:
-                    output += '\u25A7'
-                else: output += " "
-                output += " "
-            output += "|"
+                    output += u'1'
+                else:
+                    output += u" "
+                output += u" "
+            output += u"|"
 
-        output += "\n"
-        for _ in range(2 + (self.number_of_cols * 2)):
-            output += "_"
+        output += u"\n"
+        for _ in range(2 + (self.number_of_cols*2)):
+            output += u"_"
 
         return output
 
@@ -108,10 +109,11 @@ class Tetris(object):
         return num_rows_cleared
 
     def random_piece(self):
-        return Tetromino.Block(y=0,x=0)
+        start_x = x=randrange(0, self.number_of_cols - 2)
+        return Tetromino.Block(y=0,x=start_x)
         return Tetromino.random(
                 y=0,
-                x=randrange(0, self.number_of_cols - 2)
+                x=start_x
                 )
 
     def rotate_piece(self, kick_offset=0):

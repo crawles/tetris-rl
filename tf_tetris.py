@@ -8,106 +8,113 @@ import tensorflow as tf
 import tetris_api
 import tf_rl_utils
 
+def weight_variable(shape):
+    initial = tf.truncated_normal(shape, stddev=0.1)
+    return tf.Variable(initial)
+
+def bias_variable(shape):
+    initial = tf.constant(0.1, shape=shape)
+    return tf.Variable(initial)
 
 ACTIONS = {3: 'up', 2: 'right', 1: 'left', 0: 'down'}
 
 if sys.version_info.major == 2:
     range = xrange
 
-ID = 26
+# tetris
+num_cols = 10
+num_rows = 20
 
-num_cols = 6
-num_rows = 16
-gamma = 0.8
-num_hidden = 50
+# learning params
+gamma = 0.9
 learning_rate = 1e-2
-
-max_ep = 99999999 # how many steps to take
-update_frequency = 50 # after how many games to update model
-
-params = "Tetris_{id}:  {num_rows} x {num_cols} , gamma: {gamma}, num_hidden: {num_hidden}, update_freq: {update_freq}".format(
-    id = ID, num_rows = num_rows, num_cols = num_cols, gamma = gamma, num_hidden = num_hidden, update_freq = update_frequency,
-    learning_rate = learning_rate
-)
+max_ep = 99999 # how many steps to take
+num_hidden = 25
+update_frequency = 25 # after how many games to update model
 
 # create environment
 env = tetris_api.PyTetrisEnv()
 tf.reset_default_graph()  # clear the Tensorflow graph.
 
-# create agent
-myAgent = tf_rl_utils.Agent(lr=learning_rate, s_size=num_cols*num_rows, a_size=4, h_size=num_hidden)
-tf.add_to_collection('output', myAgent.output)
-tf.add_to_collection('state_in', myAgent.state_in)
-all_saver = tf.train.Saver()
-
-init = tf.global_variables_initializer()
-
 sess = tf.InteractiveSession()
-sess.run(init)
-i = 0
-total_reward = []
-total_length = []
+
+# build nodes
+x = tf.placeholder(tf.float32, shape=[None, num_cols*num_rows])
+actions = tf.placeholder(tf.int32, shape=[None])
+rewards = tf.placeholder(tf.float32, shape=[None])
+
+# 1st layer 
+W1 = weight_variable([num_cols*num_rows, num_hidden])
+b1 = bias_variable([num_hidden])
+h1 = tf.nn.relu(tf.matmul(x, W1) + b1)
+ 
+# output 
+W2 = weight_variable([num_hidden, 4])
+b2 = bias_variable([4])
+y = tf.matmul(h1,W2) + b2
+output = tf.nn.softmax(y)
+
+# get prob for chosen action
+# first need to figure out indices of all of the chose actions
+# from the flattened array
+action_indices = (tf.range(0, tf.shape(y)[0]) * tf.shape(y)[1]) + actions
+prob_for_picked_actions = tf.gather(tf.reshape(output, [-1]), action_indices)
+
+# loss function
+cross_entropy = -tf.reduce_mean(tf.log(prob_for_picked_actions) * rewards)
+train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
+
+# initialize variables
+sess.run(tf.global_variables_initializer())
+
+
+env = tetris_api.PyTetrisEnv()
 all_ep_history = []
-# prob_history = []
-
-# keep track of wins
-# game_states = []
-
-gradBuffer = sess.run(tf.trainable_variables())
-for ix, grad in enumerate(gradBuffer):
-    gradBuffer[ix] = grad * 0
-
+game_num = 0
+game_rewards = []
+action_history = []
 while True:
-    s, _, _, _ = env.reset(number_of_rows=num_rows, number_of_cols=num_cols)
-    s = tf_rl_utils.prepro(s)
-    del_state = s - np.zeros_like(s)
-    running_reward = 0
+    s_2D, _, _, _ = env.reset(number_of_rows=num_rows, number_of_cols=num_cols)
+    s = tf_rl_utils.prepro(s_2D)
+#     prior_state = np.zeros_like(s)
     ep_history = []
     for j in range(max_ep):
-        a_dist = sess.run(myAgent.output, feed_dict={myAgent.state_in: [s]})
-        # roll the dice
-        a = np.random.choice(a_dist[0], p=a_dist[0])
-        # or pick max
-        a = np.argmax(a_dist == a)
-        # prob_history.append(a_dist[0])
-
-        # Get our reward for taking an action
-        s1, r, done, _ = env.step(ACTIONS[a]) 
-        # game_states.append(env.game.print_board())
-        s1 = tf_rl_utils.prepro(s1)
-
-        ep_history.append([del_state, a, r, s1])
-        # update state
-        s = s1
-        running_reward += r
+        # determine action
+#         del_state = s - prior_state 
+#         a_dist = sess.run(output, feed_dict={x: [del_state]})
+        a_dist = sess.run(output, feed_dict={x: [s]})
+        picked_action_prob = np.random.choice(a_dist[0], p=a_dist[0])
+        action = np.argmax(a_dist == picked_action_prob)
+        action_history.append(action)
+        
+        # take action
+#         prior_state = s
+        s_2D, r, done, _ = env.step(ACTIONS[action]) 
+        s = tf_rl_utils.prepro(s_2D)
+        
+#         ep_history.append(np.array([del_state, action, r]))
+        ep_history.append(np.array([s, action, r]))
         if done:
             # game_states = []
             ep_history = np.array(ep_history)
-            ep_history[:, 2] = tf_rl_utils.discount_rewards(ep_history[:, 2], gamma=gamma)
+            r = tf_rl_utils.discount_rewards(ep_history[:, 2], gamma=gamma)
+            # z-score of r
+#             ep_history[:, 2] = (r - np.mean(r))/np.std(r)
+            ep_history[:, 2] = r
             all_ep_history.append(ep_history)
+            #TODO: make this raw rewards
+            game_rewards.append(np.sum(r))
+            ep_history = []
 
-            time_to_update_weights = ((i % update_frequency) == 0 and (i != 0))
-            if time_to_update_weights:
+            its_time_to_update_weights = ((game_num % update_frequency) == 0 and (game_num != 0))
+            if its_time_to_update_weights:
+                print game_num, '{:2.2f}'.format(np.mean(game_rewards[game_num-update_frequency:game_num]))
                 all_ep_history = np.vstack(all_ep_history)
-                feed_dict = {myAgent.reward_holder: all_ep_history[:, 2],
-                             myAgent.action_holder: all_ep_history[:, 1],
-                             myAgent.state_in: np.vstack(all_ep_history[:, 0])}
-                #TODO: ^ why vstack on del_state?
-
-                # why not just one gradient, as in SGD?
-                # maybe it is just one gradient for each weight
-                grads = sess.run(myAgent.gradients, feed_dict=feed_dict)
-                for idx, grad in enumerate(grads):
-                    gradBuffer[idx] += grad
-
-                feed_dict= dictionary = dict(zip(myAgent.gradient_holders, gradBuffer))
-                _ = sess.run(myAgent.update_batch, feed_dict=feed_dict)
-
-                # clear gradients
-                for ix,grad in enumerate(gradBuffer):
-                    gradBuffer[ix] = grad * 0
+                feed_dict = {rewards: all_ep_history[:, 2],
+                             actions: all_ep_history[:, 1],
+                             x: np.vstack(all_ep_history[:, 0])}
+                sess.run(train_step, feed_dict=feed_dict)
                 all_ep_history = []
-            total_reward.append(running_reward)
-            total_length.append(j)
+                
             break
-    i += 1
+    game_num += 1
