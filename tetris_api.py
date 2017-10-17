@@ -2,8 +2,12 @@
 wrapper to make tetris.py have gym-like interface
 """
 import numpy as np
+import sys
 
 from python_tetris import python_tetris
+
+if sys.version_info.major > 2:
+    xrange = range
 
 class PyTetrisEnv():
 

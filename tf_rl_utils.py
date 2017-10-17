@@ -1,7 +1,11 @@
+import sys
+
 import tensorflow as tf
 #import tensorflow.contrib.slim as slim
 import numpy as np
 
+if sys.version_info.major > 2:
+    xrange = range
 
 def discount_rewards(r, gamma = 0.99):
     """ Source: Karpathy

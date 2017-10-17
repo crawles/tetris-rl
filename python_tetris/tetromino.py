@@ -1,4 +1,9 @@
+import sys
+
 from random import randrange
+
+if sys.version_info.major > 2:
+    xrange = range
 
 class Tetromino(object):
     def __init__(self, rotations, current, x, y, shape):

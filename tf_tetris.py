@@ -18,8 +18,8 @@ def bias_variable(shape):
 
 ACTIONS = {3: 'up', 2: 'right', 1: 'left', 0: 'down'}
 
-if sys.version_info.major == 2:
-    range = xrange
+if sys.version_info.major > 2:
+    xrange = range
 
 # tetris
 num_cols = 10

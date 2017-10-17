@@ -5,6 +5,8 @@ import click
 
 import python_tetris
 
+if sys.version_info.major > 2:
+    xrange = range
 
 def play_game(**kwargs):
     if 'game' not in kwargs:
