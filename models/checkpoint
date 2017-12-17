@@ -1,0 +1,2 @@
+model_checkpoint_path: "C:\\Users\\Chris\\Google Drive\\notebooks\\tetris-rl\\models\\lr_moons.ckpt"
+all_model_checkpoint_paths: "C:\\Users\\Chris\\Google Drive\\notebooks\\tetris-rl\\models\\lr_moons.ckpt"
