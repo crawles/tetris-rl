@@ -22,6 +22,22 @@ def prepro(I):
     """ prepro 20x10 uint8 frame into 200 (20x10) 1D float vector """
     return I.astype(np.float).ravel()
 
+def variable_summaries(var, name):
+    """https://www.tensorflow.org/programmers_guide/summaries_and_tensorboard
+    Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+    with tf.name_scope(name):
+        mean = tf.reduce_mean(var)
+        nonzero = tf.count_nonzero(var, dtype=tf.int32)
+        per_nonzero = nonzero/tf.size(var)
+        tf.summary.scalar('mean', mean)
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+        tf.summary.scalar('stddev', stddev)
+        tf.summary.scalar('max', tf.reduce_max(var))
+        tf.summary.scalar('min', tf.reduce_min(var))
+        tf.summary.scalar('per_nonzero', per_nonzero)
+        
+        tf.summary.histogram('histogram', var)
 
 #class Agent():
 #    def __init__(self, lr, s_size, a_size, h_size):

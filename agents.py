@@ -24,5 +24,5 @@ class FullyConnected(object):
 				self.xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=self.logits)
 				self.loss = tf.reduce_mean(self.xentropy, name="loss")
 			with tf.name_scope("train"):
-				self.optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+				self.optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
 				self.training_op = self.optimizer.minimize(self.loss)
