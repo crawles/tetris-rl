@@ -1,11 +1,14 @@
 import sys
+import time
 
 import tensorflow as tf
-#import tensorflow.contrib.slim as slim
 import numpy as np
 
 if sys.version_info.major > 2:
     xrange = range
+    
+ACTIONS = {3: 'up', 2: 'right', 1: 'left', 0: 'down'}
+    
 
 def discount_rewards(r, gamma = 0.99):
     """ Source: Karpathy
@@ -39,34 +42,53 @@ def variable_summaries(var, name):
         
         tf.summary.histogram('histogram', var)
 
-#class Agent():
-#    def __init__(self, lr, s_size, a_size, h_size):
-#        # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
-#        self.state_in = tf.placeholder(shape=[None, s_size], dtype=tf.float32)
-#        hidden = slim.fully_connected(self.state_in, h_size, biases_initializer=None, activation_fn=tf.nn.relu)
-#        self.output = slim.fully_connected(hidden, a_size, activation_fn=tf.nn.softmax, biases_initializer=None)
-#        # TODO max want to roll the dice
-#        self.chosen_action = tf.argmax(self.output, 1)
-#
-#        # there will be one for EACH example in batch
-#        self.reward_holder = tf.placeholder(shape=[None], dtype=tf.float32)
-#        self.action_holder = tf.placeholder(shape=[None], dtype=tf.int32)
-#
-#        # how many total outputs there are
-#        self.indexes = tf.range(0, tf.shape(self.output)[0]) * tf.shape(self.output)[1] + self.action_holder
-#        # for each step, what was the output that we took
-#        self.responsible_outputs = tf.gather(tf.reshape(self.output, [-1]), self.indexes)
-#        self.loss = -tf.reduce_mean(tf.log(self.responsible_outputs) * self.reward_holder)
-#
-#        tvars = tf.trainable_variables()  # the weights
-#        # self.tvars = tvars
-#        self.gradient_holders = []
-#        for idx, var in enumerate(tvars):
-#            placeholder = tf.placeholder(tf.float32, name=str(idx) + '_holder')  # why no shape
-#            self.gradient_holders.append(placeholder)
-#
-#        # above block shouldn't affect
-#        self.gradients = tf.gradients(self.loss, tvars)
-#
-#        optimizer = tf.train.AdamOptimizer(learning_rate=lr)
-#        self.update_batch = optimizer.apply_gradients(zip(self.gradient_holders, tvars))
+
+def update_input(prior_states, new_state):
+    """Pop old state, add new one."""
+    prior_states.pop(0)
+    prior_states.append(new_state)
+    return np.hstack(prior_states)
+
+
+
+
+def chose_from_action_dist(a_dist):
+    """From the NN output, draw an action from the outputted action distribution"""
+    picked_action_prob = np.random.choice(a_dist[0], p=a_dist[0])
+    return np.argmax(a_dist == picked_action_prob)
+
+def play_game(env,
+              agent_step,
+              max_ep,
+              num_rows,
+              num_cols,
+              n_prior_states,
+              sess=None):
+    batch_start_time = time.time()
+    batch_num_moves = 0
+
+    s_2D, _, _, _ = env.reset(number_of_rows=num_rows, number_of_cols=num_cols)
+    s = prepro(s_2D)
+    prior_state = np.zeros_like(s)
+    # init prior states
+    prior_states = [prior_state] * n_prior_states
+    action_history = []
+    ep_history = []
+    for j in range(max_ep):
+        batch_num_moves += 1
+        nn_input = update_input(prior_states, s)
+        
+        # Determine action.
+        action_distribution = agent_step(nn_input)
+        action = chose_from_action_dist(action_distribution)
+        action_history.append(action)
+
+        # Take action.
+        prior_state = s
+        s_2D, r, done, _ = env.step(ACTIONS[action]) 
+        s = prepro(s_2D)
+
+        ep_history.append(np.array([nn_input, action, r]))
+        if done:
+            break
+    return ep_history, {'action_history': action_history}
