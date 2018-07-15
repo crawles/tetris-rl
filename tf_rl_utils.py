@@ -54,7 +54,7 @@ def update_input(prior_states, new_state):
 
 def chose_from_action_dist(a_dist):
     """From the NN output, draw an action from the outputted action distribution"""
-    picked_action_prob = np.random.choice(a_dist[0], p=a_dist[0])
+    picked_action_prob = np.random.choice(a_dist, p=a_dist)
     return np.argmax(a_dist == picked_action_prob)
 
 def play_game(env,

@@ -20,6 +20,22 @@ def highest_piece(board, board_height=20):
         return column_heights.max()
     else:  # No pieces on board yet.
         return 0
+    
+def _row_multiplier(r):
+    """
+    1 row: 1
+    2 rows: 3 points
+    3 rows: 7 points
+    4 rows: 20 points """
+    if r == 2:
+        return 3
+    if r == 3:
+        return 7
+    if r == 4:
+        return 20
+    return r
+   
+
 
 class PyTetrisEnv():
 
@@ -27,8 +43,6 @@ class PyTetrisEnv():
         self.game = None
         self.old_piece = None  # Special case for first piece.
         self.old_height = None  # Special case for first piece.
-        
-
 
     def _process_reward(self, report, reward_factor=10):
         """Convert o to nparray, reward to float"""
@@ -42,10 +56,12 @@ class PyTetrisEnv():
         new_piece = (self.game.piece != self.old_piece)
         board_is_open = (self.old_height == 0)
         if reward > 0:
-            reward *= reward_factor
+            reward = _row_multiplier(reward)
+#             reward *= reward_factor
         elif new_piece and not board_is_open:  # Didn't clear any rows.
             new_height = highest_piece(self.game.board, self.game.number_of_rows)
             reward = -(new_height - self.old_height)*0.1
+        
         return np.array(o), d, float(cum_score), float(reward)
 
     def reset(self, **kwargs):
@@ -62,10 +78,5 @@ class PyTetrisEnv():
         o, d, cum_score, reward = self._process_reward(self.game.step_forward(action))
         if d:
             reward = -1
-
-#        #DUMB reward
-#        reward = int(action in ['left', 'right'])
-#        if not reward:
-#            reward = -1
 
         return o, reward, d, None
