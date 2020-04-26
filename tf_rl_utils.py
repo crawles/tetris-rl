@@ -6,11 +6,11 @@ import numpy as np
 
 if sys.version_info.major > 2:
     xrange = range
-    
-ACTIONS = {3: 'up', 2: 'right', 1: 'left', 0: 'down'}
-    
 
-def discount_rewards(r, gamma = 0.99):
+ACTIONS = {3: 'up', 2: 'right', 1: 'left', 0: 'down'}
+
+
+def discount_rewards(r, gamma=0.99):
     """ Source: Karpathy
     Take 1D float array of rewards and compute discounted reward """
     discounted_r = np.zeros_like(r, dtype=np.float)
@@ -25,13 +25,14 @@ def prepro(I):
     """ prepro 20x10 uint8 frame into 200 (20x10) 1D float vector """
     return I.astype(np.float).ravel()
 
+
 def variable_summaries(var, name):
     """https://www.tensorflow.org/programmers_guide/summaries_and_tensorboard
     Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
     with tf.name_scope(name):
         mean = tf.reduce_mean(var)
         nonzero = tf.count_nonzero(var, dtype=tf.int32)
-        per_nonzero = nonzero/tf.size(var)
+        per_nonzero = nonzero / tf.size(var)
         tf.summary.scalar('mean', mean)
         with tf.name_scope('stddev'):
             stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
@@ -39,7 +40,7 @@ def variable_summaries(var, name):
         tf.summary.scalar('max', tf.reduce_max(var))
         tf.summary.scalar('min', tf.reduce_min(var))
         tf.summary.scalar('per_nonzero', per_nonzero)
-        
+
         tf.summary.histogram('histogram', var)
 
 
@@ -50,12 +51,11 @@ def update_input(prior_states, new_state):
     return np.hstack(prior_states)
 
 
-
-
 def chose_from_action_dist(a_dist):
     """From the NN output, draw an action from the outputted action distribution"""
     picked_action_prob = np.random.choice(a_dist, p=a_dist)
     return np.argmax(a_dist == picked_action_prob)
+
 
 def play_game(env,
               agent_step,
@@ -77,7 +77,7 @@ def play_game(env,
     for j in range(max_ep):
         batch_num_moves += 1
         nn_input = update_input(prior_states, s)
-        
+
         # Determine action.
         action_distribution = agent_step(nn_input)
         action = chose_from_action_dist(action_distribution)
@@ -85,7 +85,7 @@ def play_game(env,
 
         # Take action.
         prior_state = s
-        s_2D, r, done, _ = env.step(ACTIONS[action]) 
+        s_2D, r, done, _ = env.step(ACTIONS[action])
         s = prepro(s_2D)
 
         ep_history.append(np.array([nn_input, action, r]))

@@ -16,12 +16,15 @@ from .tetromino import Tetromino
 if sys.version_info.major > 2:
     xrange = range
 
-ActionReport = namedtuple("ActionReport", "state done score score_from_action did_perform_move")
+ActionReport = namedtuple(
+    "ActionReport", "state done score score_from_action did_perform_move")
 
 
 class Tetris(object):
-
-    def __init__(self, number_of_rows=20, number_of_cols=10, steps_between_drop=20):
+    def __init__(self,
+                 number_of_rows=20,
+                 number_of_cols=10,
+                 steps_between_drop=20):
         # game options
         self.number_of_rows = number_of_rows
         self.number_of_cols = number_of_cols
@@ -46,24 +49,26 @@ class Tetris(object):
         self.total_lines = 0
         self.moves = 0
         self.is_running = True
-        self.steps_til_drop_gen = cycle(reversed(range(self.steps_between_drop)))
+        self.steps_til_drop_gen = cycle(
+            reversed(range(self.steps_between_drop)))
         self.steps_til_drop = next(self.steps_til_drop_gen)
 
     def empty_board(self):
-        return list(np.zeros([self.number_of_rows, self.number_of_cols], dtype = np.int))
+        return list(
+            np.zeros([self.number_of_rows, self.number_of_cols], dtype=np.int))
 
     def combine_game_state(self):
         # freeze piece on board
-        piece = np.array(self.piece.rotations[self.piece.current]).astype(np.bool)
+        piece = np.array(self.piece.rotations[self.piece.current]).astype(
+            np.bool)
         p_y, p_x = self.piece.y, self.piece.x
         p_height, p_width = piece.shape
         p_start_y, p_end_y = p_y, p_y + p_height
         p_start_x, p_end_x = p_x, p_x + p_width
 
         combined_state = np.copy(self.board).astype(np.bool)
-        combined_state[p_start_y: p_end_y, p_start_x: p_end_x] += piece
+        combined_state[p_start_y:p_end_y, p_start_x:p_end_x] += piece
         return combined_state.astype(np.int)
-
 
     def pretty_print_board(self, board_object):
         output = u""
@@ -79,11 +84,10 @@ class Tetris(object):
             output += u"|"
 
         output += u"\n"
-        for _ in range(2 + (self.number_of_cols*2)):
+        for _ in range(2 + (self.number_of_cols * 2)):
             output += u"_"
 
         return output
-
 
     def print_board(self):
         return self.pretty_print_board(self.combine_game_state())
@@ -116,12 +120,9 @@ class Tetris(object):
         return num_rows_cleared
 
     def random_piece(self):
-        start_x = x=randrange(0, self.number_of_cols - 2)
-        return Tetromino.Block(y=0,x=start_x)
-        return Tetromino.random(
-                y=0,
-                x=start_x
-                )
+        start_x = x = randrange(0, self.number_of_cols - 2)
+        return Tetromino.Block(y=0, x=start_x)
+        return Tetromino.random(y=0, x=start_x)
 
     def rotate_piece(self, kick_offset=0):
         new_current = (self.piece.current + 1) % len(self.piece.rotations)
@@ -146,9 +147,10 @@ class Tetris(object):
         p_height, p_width = piece.shape
         p_start_y, p_end_y = p_y, p_y + p_height
         p_start_x, p_end_x = p_x, p_x + p_width
-        if (p_end_y - p_start_y) != p_height:  # piece is off bottom edge of board
+        if (p_end_y -
+                p_start_y) != p_height:  # piece is off bottom edge of board
             return False
-        board_subset = board_array[p_start_y: p_end_y, p_start_x: p_end_x]
+        board_subset = board_array[p_start_y:p_end_y, p_start_x:p_end_x]
         if np.max(board_subset + piece) > 1:  # if piece space is occupied
             return False
 
@@ -180,41 +182,77 @@ class Tetris(object):
                     if row_i + y >= len(self.board):
                         score_from_freeze = self.freeze_current_piece()
                         self.moves += 1
-                        return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=score_from_freeze, did_perform_move=False)
+                        return ActionReport(
+                            state=self.combine_game_state(),
+                            done=False,
+                            score=self.total_lines,
+                            score_from_action=score_from_freeze,
+                            did_perform_move=False)
 
                     if col_i + x < 0:
                         self.moves += 1
-                        return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=0, did_perform_move=False)
+                        return ActionReport(state=self.combine_game_state(),
+                                            done=False,
+                                            score=self.total_lines,
+                                            score_from_action=0,
+                                            did_perform_move=False)
 
                     if col_i + x >= len(self.board[0]):
                         self.moves += 1
-                        return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=0, did_perform_move=False)
-
+                        return ActionReport(state=self.combine_game_state(),
+                                            done=False,
+                                            score=self.total_lines,
+                                            score_from_action=0,
+                                            did_perform_move=False)
 
         for row_i, row in enumerate(self.piece.rotations[self.piece.current]):
             for col_i, col in enumerate(row):
                 if col == 1:
                     if row_i >= len(self.board) - 1:
                         self.moves += 1
-                        return ActionReport(state=self.combine_game_state(), piece=self.piece, done=False, score=self.total_lines, score_from_action=0, did_perform_move=False)
+                        return ActionReport(state=self.combine_game_state(),
+                                            piece=self.piece,
+                                            done=False,
+                                            score=self.total_lines,
+                                            score_from_action=0,
+                                            did_perform_move=False)
 
                     if self.board[row_i + y][col_i + x] != 0:
                         if self.piece.y == 0:
                             self.is_running = False
                             self.moves += 1
-                            return ActionReport(state=self.combine_game_state(), done=True, score=self.total_lines, score_from_action=0, did_perform_move=False)
+                            return ActionReport(
+                                state=self.combine_game_state(),
+                                done=True,
+                                score=self.total_lines,
+                                score_from_action=0,
+                                did_perform_move=False)
                         elif direction == 'down':
                             score_from_freeze = self.freeze_current_piece()
                             self.moves += 1
-                            return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=score_from_freeze, did_perform_move=True)
+                            return ActionReport(
+                                state=self.combine_game_state(),
+                                done=False,
+                                score=self.total_lines,
+                                score_from_action=score_from_freeze,
+                                did_perform_move=True)
                         else:
                             self.moves += 1
-                            return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=0, did_perform_move=True)
+                            return ActionReport(
+                                state=self.combine_game_state(),
+                                done=False,
+                                score=self.total_lines,
+                                score_from_action=0,
+                                did_perform_move=True)
 
         self.piece.x, self.piece.y = x, y
 
         self.moves += 1
-        return ActionReport(state=self.combine_game_state(), done=False, score=self.total_lines, score_from_action=0, did_perform_move=True)
+        return ActionReport(state=self.combine_game_state(),
+                            done=False,
+                            score=self.total_lines,
+                            score_from_action=0,
+                            did_perform_move=True)
 
     def step_forward(self, next_move):
         ''' Keep track of number of moves to drop'''
@@ -229,13 +267,50 @@ class Tetris(object):
         return report
 
 
-
 if __name__ == "__main__":
     scores = []
     game = Tetris()
 
     moves = [
-            'left', 'down','down', 'right', 'right', 'right', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'right', 'right', 'right', 'right', 'right', 'down', 'down', 'down', 'down', 'down', 'down', 'down', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right',
+        'left',
+        'down',
+        'down',
+        'right',
+        'right',
+        'right',
+        'down',
+        'down',
+        'down',
+        'down',
+        'down',
+        'down',
+        'down',
+        'down',
+        'down',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'down',
+        'down',
+        'down',
+        'down',
+        'down',
+        'down',
+        'down',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
     ]
     for _ in range(50000):
         move = random.choice(['up', 'down', 'left', 'right'])
@@ -255,4 +330,3 @@ if __name__ == "__main__":
 
         os.system('clear')
     sys.exit(0)
-
